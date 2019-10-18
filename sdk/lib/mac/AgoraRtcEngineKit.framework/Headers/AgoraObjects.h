@@ -38,6 +38,60 @@ __attribute__((visibility("default"))) @interface AgoraRtcVideoCanvas : NSObject
 @property (assign, nonatomic) NSUInteger uid;
 @end
 
+/** Lastmile probe configuration.
+ */
+__attribute__((visibility("default"))) @interface AgoraLastmileProbeConfig : NSObject
+/** Sets whether or not to test the uplink network. Some users, for example, the audience in a Live-broadcast channel, do not need such a test. 
+
+- NO: disables the test.
+- YES: enables the test.
+*/
+@property (assign, nonatomic) BOOL probeUplink;
+/** Sets whether or not to test the downlink network.
+
+- NO: disables the test.
+- YES: enables the test.
+*/
+@property (assign, nonatomic) BOOL probeDownlink;
+/** The expected maximum sending bitrate (Kbps) of the local user. 
+
+The value ranges between 100 and 5000. We recommend setting this parameter according to the bitrate value set by [setVideoEncoderConfiguration]([AgoraRtcEngineKit setVideoEncoderConfiguration:]). */
+@property (assign, nonatomic) NSUInteger expectedUplinkBitrate;
+/** The expected maximum receive bitrate in Kbps in range of [100, 5000]. */
+@property (assign, nonatomic) NSUInteger expectedDownlinkBitrate;
+@end
+
+/** Lastmile probe result in one direction.
+ */
+__attribute__((visibility("default"))) @interface AgoraLastmileProbeOneWayResult : NSObject
+/** Packet Loss Rate in range of [0, 100].
+ */
+@property (assign, nonatomic) NSUInteger packetLossRate;
+/** Network jitter in milliseconds.
+ */
+@property (assign, nonatomic) NSUInteger jitter;
+/* Bandwidth estimation in Kbps.
+ */
+@property (assign, nonatomic) NSUInteger availableBandwidth;
+@end
+
+/** Result of the lastmile probe.
+ */
+__attribute__((visibility("default"))) @interface AgoraLastmileProbeResult : NSObject
+/* State of lastmile probe report.
+ */
+@property (assign, nonatomic) AgoraLastmileProbeResultState state;
+/** Round-Trip Time in milliseconds.
+ */
+@property (assign, nonatomic) NSUInteger rtt;
+/** Uplink probe result
+ */
+@property (strong, nonatomic) AgoraLastmileProbeOneWayResult *_Nonnull uplinkReport;
+/** Downlink probe result
+ */
+@property (strong, nonatomic) AgoraLastmileProbeOneWayResult *_Nonnull downlinkReport;
+@end
+
 /** Statistics of the local video stream.
  */
 __attribute__((visibility("default"))) @interface AgoraRtcLocalVideoStats : NSObject
@@ -75,7 +129,21 @@ __attribute__((visibility("default"))) @interface AgoraRtcRemoteVideoStats : NSO
 @property (assign, nonatomic) AgoraVideoStreamType rxStreamType;
 @end
 
-/** Statistics of the remote audio stream.
+/** The statistics of the local audio stream.
+ */
+__attribute__((visibility("default"))) @interface AgoraRtcLocalAudioStats : NSObject
+/** The number of channels.
+ */
+@property (assign, nonatomic) NSUInteger numChannels;
+/** The sample rate (Hz).
+ */
+@property (assign, nonatomic) NSUInteger sentSampleRate;
+/** The average sending bitrate (Kbps).
+ */
+@property (assign, nonatomic) NSUInteger sentBitrate;
+@end
+
+/** The statistics of the remote audio stream.
  */
 __attribute__((visibility("default"))) @interface AgoraRtcRemoteAudioStats : NSObject
 /** User ID of the user sending the audio streams.
@@ -138,6 +206,12 @@ __attribute__((visibility("default"))) @interface AgoraChannelStats: NSObject
 /** Client-server latency (ms)
  */
 @property (assign, nonatomic) NSInteger lastmileDelay;
+/** Client-server loss rate (%)
+ */
+@property (assign, nonatomic) NSInteger txPacketLossRate;
+/** Server-Client loss rate (%)
+ */
+@property (assign, nonatomic) NSInteger rxPacketLossRate;
 /** Number of users in the channel.
 
 - Communication profile: The number of users in the channel.
@@ -153,6 +227,16 @@ __attribute__((visibility("default"))) @interface AgoraChannelStats: NSObject
 /** System CPU usage (%).
  */
 @property (assign, nonatomic) double cpuTotalUsage;
+/** Network gateway Rtt (ms).
+ */
+@property (assign, nonatomic) NSInteger gatewayRtt;
+
+
+@property (assign, nonatomic) double memoryAppUsageRatio;
+
+@property (assign, nonatomic) double memoryTotalUsageRatio;
+
+@property (assign, nonatomic) NSInteger memoryAppUsageInKbytes;
 @end
 
 /** Properties of the video encoder configuration.

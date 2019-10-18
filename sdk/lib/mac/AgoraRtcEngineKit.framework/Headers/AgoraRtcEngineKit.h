@@ -271,6 +271,8 @@ If the user enables the audio volume indication by calling [enableAudioVolumeInd
  */
 - (void)rtcEngine:(AgoraRtcEngineKit * _Nonnull)engine firstRemoteAudioFrameOfUid:(NSUInteger)uid elapsed:(NSInteger)elapsed;
 
+- (void)rtcEngine:(AgoraRtcEngineKit * _Nonnull)engine firstRemoteAudioFrameDecodedOfUid:(NSUInteger)uid elapsed:(NSInteger)elapsed;
+
 /** Occurs when the video stops playing.
 
  The app can use this callback to change the configuration of the view (for example, displaying other pictures in the view) after the video stops.
@@ -387,7 +389,39 @@ This callback is triggered when the time interval between two video frames equal
  */
 - (void)rtcEngine:(AgoraRtcEngineKit * _Nonnull)engine remoteVideoStateChangedOfUid:(NSUInteger)uid state:(AgoraVideoRemoteState)state;
 
+/** Occurs when the local video stream state changes.
 
+The SDK reports the current video state in this callback.
+
+ @param engine AgoraRtcEngineKit object.
+ @param state The local video state, see AgoraLocalVideoStreamState. When the state is AgoraLocalVideoStreamStateFailed(3), see the `error` parameter for details.
+ @param error The detailed error information of the local video, see AgoraLocalVideoStreamError.
+ */
+- (void)rtcEngine:(AgoraRtcEngineKit * _Nonnull)engine localVideoStateChange:(AgoraLocalVideoStreamState)state error:(AgoraLocalVideoStreamError)error;
+
+/** Occurs when the local audio state changes.
+
+ This callback indicates the state change of the local audio stream, including the state of the audio recording and encoding, and allows you to troubleshoot issues when exceptions occur.
+ 
+ @param engine See AgoraRtcEngineKit.
+ @param uid ID of the remote user whose audio state changes.
+ @param state  State of the remote audio. See [AgoraAudioRemoteState](AgoraAudioRemoteState).
+ @param reason The reason of the remote audio state change. See [AgoraAudioRemoteStateReason](AgoraAudioRemoteStateReason).
+ @param elapsed Time elapsed (ms) from the local user calling the [joinChannel]([AgoraRtcEngineKit joinChannelByToken:channelId:info:uid:joinSuccess:]) method until the SDK triggers this callback.
+ */
+- (void)rtcEngine:(AgoraRtcEngineKit * _Nonnull)engine remoteAudioStateChangedOfUid:(NSUInteger)uid state:(AgoraAudioRemoteState)state reason:(AgoraAudioRemoteStateReason)reason elapsed:(NSInteger)elapsed;
+
+/** Occurs when the local audio state changes.
+
+ This callback indicates the state change of the local audio stream, including the state of the audio recording and encoding, and allows you to troubleshoot issues when exceptions occur.
+
+ @param engine See AgoraRtcEngineKit.
+ @param state The state of the local audio. See [AgoraAudioLocalState](AgoraAudioLocalState).
+ @param error The error information of the local audio. See [AgoraAudioLocalError](AgoraAudioLocalError).
+
+ @note When the state is AgoraAudioLocalStateFailed(3), see the `error` parameter for details.
+ */
+- (void)rtcEngine:(AgoraRtcEngineKit * _Nonnull)engine localAudioStateChange:(AgoraAudioLocalState)state error:(AgoraAudioLocalError)error;
 #pragma mark Fallback Delegate Methods
 
 /**-----------------------------------------------------------------------------
@@ -525,6 +559,13 @@ Last mile refers to the connection between the local device and Agora's edge ser
  */
 - (void)rtcEngine:(AgoraRtcEngineKit * _Nonnull)engine networkQuality:(NSUInteger)uid txQuality:(AgoraNetworkQuality)txQuality rxQuality:(AgoraNetworkQuality)rxQuality;
 
+/** Called when lastmile bandwidth estimator is completed.
+ 
+ @param engine AgoraRtcEngineKit object.
+ @param result Result of lastmile probe: AgoraLastmileProbeResult.
+ */
+- (void)rtcEngine:(AgoraRtcEngineKit * _Nonnull)engine lastmileProbeTestResult:(AgoraLastmileProbeResult * _Nonnull)result;
+
 /** Reports the statistics of the uploading local video streams once every two seconds. Same as [localVideoStatBlock]([AgoraRtcEngineKit localVideoStatBlock:]).
 
  @param engine AgoraRtcEngineKit object.
@@ -532,6 +573,14 @@ Last mile refers to the connection between the local device and Agora's edge ser
  */
 - (void)rtcEngine:(AgoraRtcEngineKit * _Nonnull)engine localVideoStats:(AgoraRtcLocalVideoStats * _Nonnull)stats;
 
+/** Reports the statistics of the local audio stream.
+ 
+ The SDK triggers this callback once every two seconds.
+ 
+ @param engine See AgoraRtcEngineKit.
+ @param stats The statistics of the local audio stream. See [AgoraRtcLocalAudioStats](AgoraRtcLocalAudioStats).
+ */
+- (void)rtcEngine:(AgoraRtcEngineKit * _Nonnull)engine localAudioStats:(AgoraRtcLocalAudioStats * _Nonnull)stats;
 /** Reports the statistics of the remote video streams from each user/host.
 
 This callback is triggered once every two seconds for each user/host. If a channel includes multiple users, then this callback is triggered as many times.
@@ -1962,6 +2011,22 @@ To conduct the test:
  */
 - (int)disableLastmileTest;
 
+/** Starts lastmile bandwidth probe. This test will automatically stop if probe complete and onLastmileProbeResult() will be notified with lastmile bandwidth estimation and detail information.  
+     At the beginning of probe test, onLastmileQuality() will also be notified with network quality using |expectedUplinkBitrate| . If network quality is not good, SDK will use lower bitrate to estimate correct usable bandwidth, thus network quality will be set to QUALITY_DETECTING in onLastmileQuality() event. 
+    joinChannel() will stop probe test automatically.
+
+    @config lastmile probe configuration. 
+
+    @return -INVALID_ARGUMENT if expected bitrate is out of range. 
+    */
+- (int)startLastmileProbeTest:(AgoraLastmileProbeConfig *_Nullable)config;
+
+/** Stop current lastmile probe test, no report will be notified. 
+   @return * 0: Success.
+* < 0: Failure.
+*/
+- (int)stopLastmileProbeTest;
+
 #pragma mark Custom Video Module
 
 /**-----------------------------------------------------------------------------
@@ -2765,6 +2830,28 @@ Under unreliable network connections or the device's CPU is overloaded, the vide
 
  */
 - (int)stopCaptureDeviceTest;
+
+/** Starts the microphone to playback device test. (macOS only.)
+
+This method tests whether the microphone and playback device works properly. Once the test starts, your speech is captured by the microphone and then played through the speaker，
+
+and the SDK reports the volume information by using the [reportAudioVolumeIndicationOfSpeakers]([AgoraRtcEngineDelegate rtcEngine:reportAudioVolumeIndicationOfSpeakers:totalVolume:]) callback.
+
+@param indicationInterval Interval period (ms) of the [reportAudioVolumeIndicationOfSpeakers]([AgoraRtcEngineDelegate rtcEngine:reportAudioVolumeIndicationOfSpeakers:totalVolume:]) callback cycle.
+
+@return * 0: Success.
+* < 0: Failure.
+*/
+-(int)startAudioDeviceLoopbackTest:(int)indicationInterval;
+
+/** Stops the microphone to playback device test. (macOS only.)
+
+This method stops testing the microphone to playback device. You must call this method to stop the test after calling the [startRecordingDeviceTest](startRecordingDeviceTest:) method.
+
+@return * 0: Success.
+* < 0: Failure.
+*/
+-(int)stopAudioDeviceLoopbackTest;
 #endif
 
 

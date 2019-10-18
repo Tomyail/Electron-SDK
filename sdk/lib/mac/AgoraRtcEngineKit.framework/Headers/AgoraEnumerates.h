@@ -762,6 +762,67 @@ typedef NS_OPTIONS(NSUInteger, AgoraAudioSessionOperationRestriction) {
     AgoraAudioSessionOperationRestrictionAll               = 1 << 7
 };
 
+/** The state of the remote audio. */
+typedef NS_ENUM(NSUInteger, AgoraAudioRemoteState) {
+    /** 0: The remote audio is in the default state, probably due to AgoraAudioRemoteReasonLocalMuted(3), AgoraAudioRemoteReasonRemoteMuted(5), or AgoraAudioRemoteReasonRemoteOffline(7). */
+    AgoraAudioRemoteStateStopped = 0,
+    /** 1: The first remote audio packet is received. */
+    AgoraAudioRemoteStateStarting = 1,
+    /** 2: The remote audio stream is decoded and plays normally, probably due to AgoraAudioRemoteReasonNetworkRecovery(2), AgoraAudioRemoteReasonLocalUnmuted(4), or AgoraAudioRemoteReasonRemoteUnmuted(6). */
+    AgoraAudioRemoteStateDecoding = 2,
+    /** 3: The remote audio is frozen, probably due to AgoraAudioRemoteReasonNetworkCongestion(1). */
+    AgoraAudioRemoteStateFrozen = 3,
+    /** 4: The remote audio fails to start, probably due to AgoraAudioRemoteReasonInternal(0). */
+    AgoraAudioRemoteStateFailed = 4,
+};
+
+/** The reason of the remote audio state change. */
+typedef NS_ENUM(NSUInteger, AgoraAudioRemoteStateReason) {
+    /** 0: Internal reasons. */
+    AgoraAudioRemoteReasonInternal = 0,
+    /** 1: Network congestion. */
+    AgoraAudioRemoteReasonNetworkCongestion = 1,
+    /** 2: Network recovery. */
+    AgoraAudioRemoteReasonNetworkRecovery = 2,
+    /** 3: The local user stops receiving the remote audio stream or disables the audio module. */
+    AgoraAudioRemoteReasonLocalMuted = 3,
+    /** 4: The local user resumes receiving the remote audio stream or enables the audio module. */
+    AgoraAudioRemoteReasonLocalUnmuted = 4,
+    /** 5: The remote user stops sending the audio stream or disables the audio module. */
+    AgoraAudioRemoteReasonRemoteMuted = 5,
+    /** 6: The remote user resumes sending the audio stream or enables the audio module. */
+    AgoraAudioRemoteReasonRemoteUnmuted = 6,
+    /** 7: The remote user leaves the channel. */
+    AgoraAudioRemoteReasonRemoteOffline = 7,
+};
+
+/** The state of the local audio. */
+typedef NS_ENUM(NSUInteger, AgoraAudioLocalState) {
+    /** 0: The local audio is in the initial state. */
+    AgoraAudioLocalStateStopped = 0,
+    /** 1: The recording device starts successfully.  */
+    AgoraAudioLocalStateRecording = 1,
+    /** 2: The first audio frame encodes successfully. */
+    AgoraAudioLocalStateEncoding = 2,
+    /** 3: The local audio fails to start. */
+    AgoraAudioLocalStateFailed = 3,
+};
+
+/** The error information of the local audio. */
+typedef NS_ENUM(NSUInteger, AgoraAudioLocalError) {
+    /** 0: The local audio is normal. */
+    AgoraAudioLocalErrorOk = 0,
+    /** 1: No specified reason for the local audio failure. */
+    AgoraAudioLocalErrorFailure = 1,
+    /** 2: No permission to use the local audio device. */
+    AgoraAudioLocalErrorDeviceNoPermission = 2,
+    /** 3: The microphone is in use. */
+    AgoraAudioLocalErrorDeviceBusy = 3,
+    /** 4: The local audio recording fails. Check whether the recording device is working properly. */
+    AgoraAudioLocalErrorRecordFailure = 4,
+    /** 5: The local audio encoding fails. */
+    AgoraAudioLocalErrorEncodeFailure = 5,
+};
 /** Media device type. */
 typedef NS_ENUM(NSInteger, AgoraMediaDeviceType) {
     /** Unknown device. */
@@ -831,3 +892,42 @@ typedef NS_ENUM(NSUInteger, AgoraConnectionChangedReason) {
     /** 5: The SDK has left the channel. */
     AgoraConnectionChangedLeaveChannel = 5,
 };
+
+/** State of lastmile probe result. */
+typedef NS_ENUM(NSUInteger, AgoraLastmileProbeResultState) {
+  /** 1: Lastmile probe result is complete. */
+  AgoraLastmileProbeResultComplete = 1,
+  /** 2: Indicates the probe result is incomplete and bandwidth estimation is not available, probably caused by temporary limited test resources. */
+  AgoraLastmileProbeResultIncompleteNoBwe = 2,
+  /** 3: Bwe probe result is not available, probably due to network down. */
+  AgoraLastmileProbeResultUnavailable = 3,
+};
+
+/** The state of the local video stream. */
+typedef NS_ENUM(NSInteger, AgoraLocalVideoStreamState) {
+  /** 0: the local video is in the initial state. */
+  AgoraLocalVideoStreamStateStopped = 0,
+  /** 1: the local video capturer starts successfully. */
+  AgoraLocalVideoStreamStateCapturing = 1,
+  /** 2: the first local video frame encodes successfully. */
+  AgoraLocalVideoStreamStateEncoding = 2,
+  /** 3: the local video fails to start. */
+  AgoraLocalVideoStreamStateFailed = 3,
+};
+
+/** The detailed error information of the local video. */
+typedef NS_ENUM(NSInteger, AgoraLocalVideoStreamError) {
+  /** 0: the local video is normal. */
+  AgoraLocalVideoStreamErrorOK = 0,
+  /** 1: no specified reason for the local video failure. */
+  AgoraLocalVideoStreamErrorFailure = 1,
+  /** 2: no permission to use the local video device. */
+  AgoraLocalVideoStreamErrorDeviceNoPermission = 2,
+  /** 3: the local video capturer is in use. */
+  AgoraLocalVideoStreamErrorDeviceBusy = 3,
+  /** 4: the local video capture fails. Check whether the capturer is working properly. */
+  AgoraLocalVideoStreamErrorCaptureFailure = 4,
+  /** 5: the local video encoding fails. */
+  AgoraLocalVideoStreamErrorEncodeFailure = 5,
+};
+
