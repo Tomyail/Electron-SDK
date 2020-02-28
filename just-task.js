@@ -71,6 +71,7 @@ task('install', () => {
   const config = Object.assign({}, getArgvFromNpmEnv(), getArgvFromPkgJson())
   // work-around
   const addonVersion = '2.9.0-rc.101'
+  console.log('install: ',config.prebuilt);
   if (config.prebuilt) {
     download({
       electronVersion: config.electronVersion, 
