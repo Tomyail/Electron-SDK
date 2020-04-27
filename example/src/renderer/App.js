@@ -10,6 +10,8 @@ import WindowPicker from './components/WindowPicker/index.js'
 import DisplayPicker from './components/DisplayPicker/index.js'
 import { VoiceChangerPreset } from '../../../JS/Api/native_type';
 
+const isMac = process.platform === 'darwin'
+
 export default class App extends Component {
   constructor(props) {
     super(props)
@@ -55,9 +57,11 @@ export default class App extends Component {
       this.rtcEngine = new AgoraRtcEngine()
       this.rtcEngine.initialize(APP_ID)
       this.rtcEngine.initializePluginManager();
-      const libPath = path.resolve(__static, 'fu-mac/libFaceUnityPlugin.dylib')
+      const libPath = isMac ? 
+            path.resolve(__static, 'bytedance/libByteDancePlugin.dylib')
+          : path.resolve(__static, 'bytedance/ByteDancePlugin.dll')
       if(this.rtcEngine.registerPlugin({
-        id: 'fu-mac',
+        id: 'bytedance',
         path: libPath
       }) < 0){
         console.error(`load plugin failed`)
@@ -122,10 +126,19 @@ export default class App extends Component {
     rtcEngine.on('audiovolumeindication', (
       uid,
       volume,
+      vad,
+      channelId,
       speakerNumber,
       totalVolume
     ) => {
-      console.log(`uid${uid} volume${volume} speakerNumber${speakerNumber} totalVolume${totalVolume}`)
+      console.log(`audiovolumeindication   uid${uid} volume${volume} vad${vad} channelId${channelId} speakerNumber${speakerNumber} totalVolume${totalVolume}`)
+    })
+    rtcEngine.on('groupAudioVolumeIndication', (
+      speakers,
+      speakerNumber,
+      totalVolume
+    ) => {
+    console.log(`groupAudioVolumeIndication  uid: ${speakers[0].uid} volume: ${speakers[0].volume}  vad: ${speakers[0].vad}  channelId: ${speakers[0].channelId}`)
     })
     rtcEngine.on('error', err => {
       console.error(err)
@@ -160,7 +173,7 @@ export default class App extends Component {
 
     rtcChannel.on('userOffline', (uid, reason) => {
       this.setState({
-        users: this.state.users.delete(this.state.users.indexOf({cannelId, uid}))
+        users: this.state.users.delete(this.state.users.indexOf({channelId, uid}))
       })
     })
   }
@@ -176,8 +189,10 @@ export default class App extends Component {
     rtcEngine.setClientRole(this.state.role)
     rtcEngine.setAudioProfile(0, 1)
     // rtcEngine.enableVideo()
-    let logpath = path.resolve(os.homedir(), "./agoramain.sdk")
+    let logpath = path.resolve(os.homedir(), "./agoramainsdk.log")
+    let addonlogpath = path.resolve(os.homedir(), "./agoraaddon.log")
     rtcEngine.setLogFile(logpath)
+    rtcEngine.setAddonLogFile(addonlogpath)
     rtcEngine.enableWebSdkInteroperability(true)
     if(encoderWidth === 0 && encoderHeight === 0) {
       //use video profile
@@ -189,7 +204,7 @@ export default class App extends Component {
     rtcEngine.setLocalVoiceReverbPreset(this.state.voiceReverbPreset)
     // console.log('loop', rtcEngine.enableLoopbackRecording(true, null))
     rtcEngine.enableDualStreamMode(true)
-    rtcEngine.enableAudioVolumeIndication(1000, 3)
+    rtcEngine.enableAudioVolumeIndication(1000, 3, true)
 
     //enable beauty options
     rtcEngine.setBeautyEffectOptions(true, {
@@ -265,6 +280,8 @@ export default class App extends Component {
         rtcEngine.videoSourceInitialize(APP_ID);
         let logpath = path.resolve(os.homedir(), "./agorascreenshare.log")
         rtcEngine.videoSourceSetLogFile(logpath)
+        let addonlogpath = path.resolve(os.homedir(), "./agorascreenshareaddon.log")
+        rtcEngine.videoSourceSetAddonLogFile(addonlogpath)
         rtcEngine.videoSourceSetChannelProfile(1);
         rtcEngine.videoSourceEnableWebSdkInteroperability(true)
         // rtcEngine.videoSourceSetVideoProfile(50, false);
@@ -366,7 +383,7 @@ export default class App extends Component {
   }
 
   toggleFuPlugin = () => {
-    const plugin = this.rtcEngine.getPlugins().find(plugin => plugin.id === 'fu-mac' )
+    const plugin = this.rtcEngine.getPlugins().find(plugin => plugin.id === 'bytedance' )
     if (plugin) {
       if(this.state.fuEnabled) {
         plugin.disable();
@@ -407,6 +424,85 @@ export default class App extends Component {
         plugin.enable();
         this.setState({
           fuEnabled: true
+        })
+      }
+    }
+  }
+
+  toggleByteDancePlugin = () => {
+    const plugin = this.rtcEngine.getPlugins().find(plugin => plugin.id === 'bytedance' )
+    if (plugin) {
+      if(this.state.bdEnabled) {
+        plugin.disable();
+        clearInterval(this.byteTimer)
+        this.byteTimer = null
+        this.setState({
+          bdEnabled: false
+        })
+      } else {
+        if(isMac) {
+          plugin.setParameter(JSON.stringify({
+            "plugin.bytedance.licensePath": path.join(__static, "bytedance/resource/license.licbag")
+          }))
+          plugin.setParameter(JSON.stringify({
+            "plugin.bytedance.stickerPath": path.join(__static, "bytedance/resource/StickerResource.bundle")
+          }))
+          plugin.setParameter(JSON.stringify({
+            "plugin.bytedance.beauty.resourcepath": path.join(__static, "bytedance/resource/BeautyResource.bundle/IESBeauty")
+          }))
+          plugin.setParameter(JSON.stringify({
+            "plugin.bytedance.beauty.intensity": {
+              1: 1.0,
+              2: 1.0,
+              9: 1.0
+            }
+          }))
+          plugin.setParameter(JSON.stringify({
+            "plugin.bytedance.faceDetectModelPath": path.join(__static, "bytedance/resource/StickerResource.bundle/ttfacemodel/tt_face_v6.0.model"),
+            "plugin.bytedance.faceDetectExtraModelPath": path.join(__static, "bytedance/resource/StickerResource.bundle/ttfacemodel/tt_face_extra_v9.0.model"),
+            "plugin.bytedance.faceAttributeModelPath": path.join(__static, "bytedance/resource/StickerResource.bundle/ttfaceattri/tt_face_attribute_v4.1.model"),
+            "plugin.bytedance.faceAttributeEnabled": true
+          }))
+          plugin.setParameter(JSON.stringify({
+            "plugin.bytedance.handDetectEnabled": true,
+            "plugin.bytedance.handDetectModelPath": path.join(__static, "bytedance/resource/StickerResource.bundle/handmodel/tt_hand_det_v9.0.model"),
+            "plugin.bytedance.handBoxModelPath": path.join(__static, "bytedance/resource/StickerResource.bundle/handmodel/tt_hand_box_reg_v10.0.model"),
+            "plugin.bytedance.handGestureModelPath": path.join(__static, "bytedance/resource/StickerResource.bundle/handmodel/tt_hand_gesture_v8.1.model"),
+            "plugin.bytedance.handKPModelPath": path.join(__static, "bytedance/resource/StickerResource.bundle/handmodel/tt_hand_kp_v5.0.model"),
+          }))
+
+          this.byteTimer = setInterval(() => {
+            console.log(plugin.getParameter("plugin.bytedance.face.attribute"))
+            console.log(plugin.getParameter("plugin.bytedance.hand.info"))
+          }, 1000)
+        } else {
+          plugin.setParameter(JSON.stringify({
+            "plugin.bytedance.licensePath": path.join(__static, "bytedance/resource/license.bag")
+          }))
+          // plugin.setParameter(JSON.stringify({
+          //   "plugin.bytedance.stickerPath": path.join(__static, "bytedance/resource/StickerResource.bundle")
+          // }))
+          // plugin.setParameter(JSON.stringify({
+          //   "plugin.bytedance.beauty.resourcepath": path.join(__static, "bytedance/resource/BeautyResource.bundle/IESBeauty")
+          // }))
+          // plugin.setParameter(JSON.stringify({
+          //   "plugin.bytedance.beauty.intensity": {
+          //     1: 1.0,
+          //     2: 1.0,
+          //     9: 1.0
+          //   }
+          // }))
+          plugin.setParameter(JSON.stringify({
+            "plugin.bytedance.faceDetectModelPath": path.join(__static, "bytedance/resource/model/ttfacemodel/tt_face_v6.0.model")
+          }))
+          plugin.setParameter(JSON.stringify({
+            "plugin.bytedance.faceAttributeModelPath": path.join(__static, "bytedance/resource/model/ttfaceattrmodel/tt_face_attribute_v4.1.model")
+          }))
+        }
+        
+        plugin.enable();
+        this.setState({
+          bdEnabled: true
         })
       }
     }
@@ -791,6 +887,12 @@ export default class App extends Component {
               <button onClick={this.toggleFuPlugin} className="button is-link">{this.state.fuEnabled ? 'disable' : 'enable'}</button>
             </div>
           </div>
+          <div className="field">
+            <label className="label">Toggle ByteDance Plugin</label>
+            <div className="control">
+              <button onClick={this.toggleByteDancePlugin} className="button is-link">{this.state.bdEnabled ? 'disable' : 'enable'}</button>
+            </div>
+          </div>
         </div>
         <div className="column is-three-quarters window-container">
           {this.state.users.map((item, key) => (
@@ -818,7 +920,7 @@ class Window extends Component {
   }
 
   componentDidMount() {
-    let dom = document.querySelector(`#video-${this.props.uid}`)
+    let dom = document.querySelector(`#video-${this.props.channel || ""}-${this.props.uid}`)
     if (this.props.role === 'local') {
       dom && this.props.rtcEngine.setupLocalVideo(dom)
     } else if (this.props.role === 'localVideoSource') {
@@ -838,7 +940,7 @@ class Window extends Component {
   render() {
     return (
       <div className="window-item">
-        <div className="video-item" id={'video-' + this.props.uid}></div>
+        <div className="video-item" id={`video-${this.props.channel || ""}-${this.props.uid}`}></div>
 
       </div>
     )

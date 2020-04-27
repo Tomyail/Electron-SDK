@@ -7,6 +7,7 @@ const doLeave = require('./utils/doLeave');
 const LiveStreaming = require('./utils/cdn');
 const MultiStream = require('./utils/multistream');
 const path = require('path')
+const APPID = process.env["AGORA_APPID"] || ""
 
 let localRtcEngine = null;
 let multistream = null;
@@ -18,7 +19,7 @@ describe('Basic API Coverage', () => {
   beforeAll(() => {
     localRtcEngine = new AgoraRtcEngine();
     localRtcEngine.setLogFile('/')
-    localRtcEngine.initialize('aab8b8f5a8cd4469a63042fcfafe7063');
+    localRtcEngine.initialize(APPID);
   });
   afterEach(() => {
     // Restore mocks after each test
@@ -36,6 +37,12 @@ describe('Basic API Coverage', () => {
   // It('Get error description by code', () => {
   //   expect(localRtcEngine.getErrorDescription(2)).toBeDefined()
   // })
+
+  it('set Addon Log File', () => {
+    expect(localRtcEngine.setAddonLogFile(path.resolve(__dirname, "../test.log"))).toBe(0);
+    expect(localRtcEngine.setAddonLogFile()).toBe(0);
+    // Expect(localRtcEngine.setChannelProfile('0')).toBeDefined()
+  });
 
   it('Set Channel Profile', () => {
     expect(localRtcEngine.setChannelProfile(0)).toBe(0);
@@ -114,7 +121,7 @@ describe('Basic API Coverage', () => {
 describe('cdn coverage', () => {
   beforeAll(() => {
     localRtcEngine = new AgoraRtcEngine();
-    localRtcEngine.initialize('aab8b8f5a8cd4469a63042fcfafe7063');
+    localRtcEngine.initialize(APPID);
   });
   beforeEach(() => {
     // Restore mocks after each test
@@ -144,7 +151,7 @@ describe('cdn coverage', () => {
 describe('Basic API Coverage 2', () => {
   beforeAll(() => {
     localRtcEngine = new AgoraRtcEngine();
-    localRtcEngine.initialize('aab8b8f5a8cd4469a63042fcfafe7063');
+    localRtcEngine.initialize(APPID);
   });
   afterEach(() => {
     // Restore mocks after each test
@@ -173,7 +180,7 @@ describe('Basic API Coverage 2', () => {
 describe('Basic API Coverage 3', () => {
   beforeEach(() => {
     localRtcEngine = new AgoraRtcEngine();
-    localRtcEngine.initialize('aab8b8f5a8cd4469a63042fcfafe7063');
+    localRtcEngine.initialize(APPID);
     localRtcEngine.setLogFile(path.resolve(__dirname, "../test.log"))
   });
   afterEach(() => {
@@ -181,12 +188,17 @@ describe('Basic API Coverage 3', () => {
     jest.restoreAllMocks();
     localRtcEngine.release()
   });
+
+  it('play effect', () => {
+    expect(localRtcEngine.playEffect(0, "", 0, 0, 0, 0, false)).toBe(-2)
+    expect(localRtcEngine.playEffect(0, "", 0, 0, 0, 0, false, 0)).toBe(-2)
+  });
 });
 
 describe.skip('Render coverage', () => {
   beforeAll(() => {
     localRtcEngine = new AgoraRtcEngine();
-    localRtcEngine.initialize('aab8b8f5a8cd4469a63042fcfafe7063');
+    localRtcEngine.initialize(APPID);
   });
   beforeEach(() => {
     // Restore mocks after each test
@@ -223,7 +235,7 @@ const isMac = process.platform === 'darwin';
 const MultiStreamTests = () => {
   beforeAll(() => {
     localRtcEngine = new AgoraRtcEngine();
-    localRtcEngine.initialize('aab8b8f5a8cd4469a63042fcfafe7063');
+    localRtcEngine.initialize(APPID);
     multistream = new MultiStream(localRtcEngine, 'basic-coverage');
   });
   afterAll(done => {

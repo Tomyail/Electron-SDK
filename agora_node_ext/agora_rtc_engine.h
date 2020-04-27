@@ -272,6 +272,7 @@ namespace agora {
             NAPI_API(enablePlugin);
             NAPI_API(getPlugins);
             NAPI_API(setPluginParameter);
+            NAPI_API(getPluginParameter);
 
             /**
              * 2.3.3 apis
@@ -337,6 +338,8 @@ namespace agora {
             NAPI_API(adjustEffectPublishVolume);
             NAPI_API(getEffectPlayoutVolume);
             NAPI_API(getEffectPublishVolume);
+            NAPI_API(setAddonLogFile);
+            NAPI_API(videoSourceSetAddonLogFile);
         public:
             Isolate* getIsolate() { return m_isolate; }
             IRtcEngine* getRtcEngine() { return m_engine; }
@@ -540,6 +543,44 @@ namespace agora {
             } \
         } while (false);
 /*
+* to extract seven parameters from JS call parameters.
+*/
+#define napi_get_param_8(argv, type1, param1, type2, param2, type3, param3, type4, param4, type5, param5, type6, param6, type7, param7, type8, param8) \
+        do { \
+            status = napi_get_value_##type1##_(argv[0], (param1)); \
+            if(status != napi_ok) { \
+                break; \
+            } \
+            status = napi_get_value_##type2##_(argv[1], (param2)); \
+            if(status != napi_ok) { \
+                break; \
+            } \
+            status = napi_get_value_##type3##_(argv[2], (param3)); \
+            if(status != napi_ok) { \
+                break; \
+            } \
+            status = napi_get_value_##type4##_(argv[3], (param4)); \
+            if(status != napi_ok) { \
+                break; \
+            } \
+		    status = napi_get_value_##type5##_(argv[4], (param5)); \
+            if(status != napi_ok) { \
+                break; \
+            } \
+            status = napi_get_value_##type6##_(argv[5], (param6)); \
+            if(status != napi_ok) { \
+                break; \
+            } \
+            status = napi_get_value_##type7##_(argv[6], (param7)); \
+            if(status != napi_ok) { \
+                break; \
+            } \
+            status = napi_get_value_##type8##_(argv[7], (param8)); \
+            if(status != napi_ok) { \
+                break; \
+            } \
+        } while (false);
+/*
 * to return int value for JS call.
 */
 #define napi_set_int_result(args, result) (args).GetReturnValue().Set(Integer::New(args.GetIsolate(), (result)))
@@ -618,11 +659,19 @@ namespace agora {
             break; \
       }
 
+#ifdef _WIN32
 #define CHECK_PLUGIN_MODULE_EXIST(pluginInfo) \
         if (pluginInfo.pluginModule == NULL) { \
             LOG_ERROR("Error :%s, :%d, not unload plugin \"%s\"\n", __FUNCTION__, __LINE__, pluginInfo.id); \
             break;\
         }
+#else
+#define CHECK_PLUGIN_MODULE_EXIST(pluginInfo) \
+        if (pluginInfo.pluginModule == NULL) { \
+            LOG_ERROR("Error :%s, :%d, %sn, not unload plugin \"%s\"\n", __FUNCTION__, __LINE__, dlerror(), pluginInfo.id); \
+            break;\
+        }
+#endif
 
 #define CHECK_PLUGIN_INSTANCE_EXIST(pluginInfo) \
         if (pluginInfo.instance == NULL) { \
@@ -646,6 +695,7 @@ typedef unsigned int uint32;
 #define CALL_MEM_FUNC_FROM_POINTER_WITH_PARAM(pointer, func, param) pointer->##func(param)
 #define CALL_MEM_FUNC_FROM_POINTER_WITH_PARAM2(pointer, func, param1, param2) pointer->##func(param1, param2)
 #define CALL_MEM_FUNC_FROM_POINTER_WITH_PARAM3(pointer, func, param1, param2, param3) pointer->##func(param1, param2, param3)
+#define CALL_MEM_FUNC_FROM_POINTER_WITH_PARAM8(pointer, func, param1, param2, param3, param4, param5, param6, param7, param8) pointer->##func(param1, param2, param3, param4, param5, param6, param7, param8)
 
 
 #define CALL_MEM_FUNC(cls, func) cls.##func()
@@ -653,17 +703,20 @@ typedef unsigned int uint32;
 #define CALL_MEM_FUNC_WITH_PARAM2(cls, func, param1, param2) cls.##func(param1, param2)
 #define CALL_MEM_FUNC_WITH_PARAM3(cls, func, param1, param2, param3) cls.##func(param1, param2, param3)
 #define CALL_MEM_FUNC_WITH_PARAM7(cls, func, param1, param2, param3, param4, param5, param6, param7) cls.##func(param1, param2, param3, param4, param5, param6, param7)
+#define CALL_MEM_FUNC_WITH_PARAM8(cls, func, param1, param2, param3, param4, param5, param6, param7, param8) cls.##func(param1, param2, param3, param4, param5, param6, param7, param8)
 #else
 #define CALL_MEM_FUNC_FROM_POINTER(pointer, func) pointer->func()
 #define CALL_MEM_FUNC_FROM_POINTER_WITH_PARAM(pointer, func, param) pointer->func(param)
 #define CALL_MEM_FUNC_FROM_POINTER_WITH_PARAM2(pointer, func, param1, param2) pointer->func(param1, param2)
 #define CALL_MEM_FUNC_FROM_POINTER_WITH_PARAM3(pointer, func, param1, param2, param3) pointer->func(param1, param2, param3)
+#define CALL_MEM_FUNC_FROM_POINTER_WITH_PARAM8(pointer, func, param1, param2, param3, param4, param5, param6, param7, param8) pointer->func(param1, param2, param3, param4, param5, param6, param7, param8)
 
 #define CALL_MEM_FUNC(cls, func) cls.func()
 #define CALL_MEM_FUNC_WITH_PARAM(cls, func, param) cls.func(param)
 #define CALL_MEM_FUNC_WITH_PARAM2(cls, func, param1, param2) cls.func(param1, param2)
 #define CALL_MEM_FUNC_WITH_PARAM3(cls, func, param1, param2, param3) cls.func(param1, param2, param3)
 #define CALL_MEM_FUNC_WITH_PARAM7(cls, func, param1, param2, param3, param4, param5, param6, param7) cls.func(param1, param2, param3, param4, param5, param6, param7)
+#define CALL_MEM_FUNC_WITH_PARAM8(cls, func, param1, param2, param3, param4, param5, param6, param7, param8) cls.func(param1, param2, param3, param4, param5, param6, param7, param8)
 
 #endif
 /*
@@ -678,6 +731,27 @@ typedef unsigned int uint32;
             napi_get_native_this(args, pEngine);\
             CHECK_NATIVE_THIS(pEngine);\
             int result = CALL_MEM_FUNC_FROM_POINTER(pEngine->m_engine, method);\
+            args.GetReturnValue().Set(Integer::New(args.GetIsolate(), result));\
+        } while (false);\
+        LOG_LEAVE;\
+    }
+#define NAPI_API_DEFINE_WRAPPER_PARAM_8(method, type, type2, type3, type4, type5, type6, type7, type8) \
+    NAPI_API_DEFINE(NodeRtcEngine, method) \
+    { \
+        LOG_ENTER; \
+        do {\
+            NodeRtcEngine *pEngine = nullptr;\
+            napi_get_native_this(args, pEngine);\
+            CHECK_NATIVE_THIS(pEngine);\
+            type param;\
+            type2 param2;\
+            type3 param3;\
+            type4 param4;\
+            type5 param5;\
+            type6 param6;\
+            type7 param7;\
+            type8 param8;\
+            int result = CALL_MEM_FUNC_FROM_POINTER_WITH_PARAM8(pEngine->m_engine, method, param, param2, param3, param4, param5, param6, param7, param8);\
             args.GetReturnValue().Set(Integer::New(args.GetIsolate(), result));\
         } while (false);\
         LOG_LEAVE;\
@@ -780,6 +854,33 @@ typedef unsigned int uint32;
             CHECK_NAPI_STATUS(pEngine, status);\
             RtcEngineParameters rep(pEngine->m_engine);\
             int result = CALL_MEM_FUNC_WITH_PARAM7(rep, method, param, param2, param3, param4, param5, param6, param7);\
+            napi_set_int_result(args, result); \
+        } while (false);\
+        LOG_LEAVE;\
+    }
+
+
+#define NAPI_API_DEFINE_WRAPPER_SET_PARAMETER_8(method, type, type2, type3, type4, type5, type6, type7, type8) \
+ NAPI_API_DEFINE(NodeRtcEngine, method) \
+    {\
+        LOG_ENTER;\
+        do {\
+            NodeRtcEngine *pEngine = nullptr;\
+            napi_get_native_this(args, pEngine);\
+            CHECK_NATIVE_THIS(pEngine);\
+            napi_status status = napi_ok;\
+            type param;\
+            type2 param2;\
+            type3 param3;\
+            type4 param4;\
+            type5 param5;\
+            type6 param6;\
+            type7 param7;\
+            type8 param8;\
+            napi_get_param_8(args, type, param, type2, param2, type3, param3, type4, param4, type5, param5, type6, param6, type7, param7, type8, param8);\
+            CHECK_NAPI_STATUS(pEngine, status);\
+            RtcEngineParameters rep(pEngine->m_engine);\
+            int result = CALL_MEM_FUNC_WITH_PARAM8(rep, method, param, param2, param3, param4, param5, param6, param7, param8);\
             napi_set_int_result(args, result); \
         } while (false);\
         LOG_LEAVE;\
