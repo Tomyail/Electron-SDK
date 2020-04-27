@@ -9,16 +9,18 @@ IAVFramePluginManager::IAVFramePluginManager()
 
 IAVFramePluginManager::~IAVFramePluginManager()
 {
+    release();
 }
 
 bool IAVFramePluginManager::onCaptureVideoFrame(VideoFrame& videoFrame)
 {
+    pluginMutex.lock();
     for (auto const& element : m_mapPlugins) {
         if(element.second.enabled) {
             element.second.instance->onPluginCaptureVideoFrame((VideoPluginFrame*)&videoFrame);
         }
     }
-
+    pluginMutex.unlock();
     return true;
 }
 
@@ -54,6 +56,7 @@ void IAVFramePluginManager::registerPlugin(agora_plugin_info& plugin)
 
 void IAVFramePluginManager::unregisterPlugin(std::string& pluginId)
 {
+    pluginMutex.lock();
     auto iter = m_mapPlugins.find(pluginId);
     if(iter!=m_mapPlugins.end())
     {
@@ -71,6 +74,7 @@ void IAVFramePluginManager::unregisterPlugin(std::string& pluginId)
         }
         m_mapPlugins.erase(iter);
     }
+    pluginMutex.unlock();
 }
 
 bool IAVFramePluginManager::hasPlugin(std::string& pluginId)
@@ -109,8 +113,9 @@ std::vector<std::string> IAVFramePluginManager::getPlugins()
     return result;
 }
 
-void IAVFramePluginManager::release()
+int IAVFramePluginManager::release()
 {
+    pluginMutex.lock();
     for (auto const& element : m_mapPlugins) {
         //free plugin instance
         if(element.second.instance) {
@@ -125,4 +130,7 @@ void IAVFramePluginManager::release()
             #endif
         }
     }
+    m_mapPlugins.clear();
+    pluginMutex.unlock();
+    return 0;
 }

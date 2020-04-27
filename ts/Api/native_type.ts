@@ -1721,7 +1721,7 @@ export interface NodeRtcEngine {
   /**
    * @ignore
    */
-  enableAudioVolumeIndication(interval: number, smooth: number): number;
+  enableAudioVolumeIndication(interval: number, smooth: number, report_vad: boolean): number;
   /**
    * @ignore
    */
@@ -1745,11 +1745,19 @@ export interface NodeRtcEngine {
   /**
    * @ignore
    */
+  setAddonLogFile(filepath: string): number;
+  /**
+   * @ignore
+   */
   setLogFileSize(size: number): number;
   /**
    * @ignore
    */
   videoSourceSetLogFile(filepath: string): number;
+  /**
+   * @ignore
+   */
+  videoSourceSetAddonLogFile(filepath: string): number;
   /**
    * @ignore
    */
@@ -1993,7 +2001,7 @@ export interface NodeRtcEngine {
   /**
    * @ignore
    */
-  getScreenWindowsInfo(): Array<Object>;
+  getScreenWindowsInfo(options:number): Array<Object>;
   /**
    * @ignore
    */
@@ -2222,7 +2230,8 @@ export interface NodeRtcEngine {
     pitch: number,
     pan: number,
     gain: number,
-    publish: number
+    publish: number,
+    startPos: number
   ): number;
   /**
    * @ignore
@@ -2450,6 +2459,10 @@ export interface NodeRtcEngine {
    * @ignore
    */
   setPluginParameter(pluginId: string, param: string): number;
+  /**
+   * @ignore
+   */
+  getPluginParameter(pluginId: string, paramKey: string): string;
 }
 
 export interface NodeRtcChannel {

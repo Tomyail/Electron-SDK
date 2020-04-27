@@ -69,6 +69,7 @@ import AgoraRtcEngine from 'agora-electron-sdk'
 const rtcEngine = new AgoraRtcEngine();
 rtcEngine.initialize('<your agora app id>');
 ```
+To obtain Agora APP ID, you need to first create an account at Agora.io. Then, you can create a new project and obtain the APP ID. 
 
 ### When using without electron-webpack
 When using directly within a web electron project with custom webpack configuration, you may see errors when compiling. It's because you have not properly configured loader for node addon. A convenient way to skip the compile process is to set `externals` property of your webpack config to `{"agora-electron-sdk": "commonjs2 agora-electron-sdk"}`
@@ -107,9 +108,9 @@ Contributions are what make the open source community such an amazing place to b
 5. Open a Pull Request
 
 <!-- MARKDOWN LINKS & IMAGES -->
-[build-shield]: https://img.shields.io/travis/AgoraIO-Usecase/eEducation/master.svg?style=flat-square
-[build-url]: https://travis-ci.org/AgoraIO-Usecase/eEducation
-[windows-build-shield]: https://ci.appveyor.com/api/projects/status/github/AgoraIO/Electron-SDK?branch=dev/2.9.0&svg=true
+[build-shield]: https://travis-ci.org/AgoraIO/Electron-SDK.svg?branch=dev%2F2.9.0.102
+[build-url]: https://travis-ci.org/AgoraIO/Electron-SDK
+[windows-build-shield]: https://ci.appveyor.com/api/projects/status/github/AgoraIO/Electron-SDK?branch=dev/2.9.0.102&svg=true
 [windows-build-url]:https://ci.appveyor.com/project/menthays/electron-sdk/branch/dev/2.9.0
 [npm-shield]: https://img.shields.io/npm/v/agora-electron-sdk/latest
 [npm]: https://npmjs.com/package/agora-electron-sdk/v/2.9.0-hotfix.2
