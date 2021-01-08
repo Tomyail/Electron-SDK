@@ -85,7 +85,7 @@ task('download', () => {
   })
 })
 // trigger when run npm install
-task('postinstall', () => {
+task('install', () => {
   const config = Object.assign({}, getArgvFromNpmEnv(), getArgvFromPkgJson())
   // work-around
   const addonVersion = '2.9.0-rc.107-build.998'
