@@ -142,7 +142,7 @@ export interface TranscodingConfig {
    *
    * **Note**: Agora adjusts all values over 30 to 30.
    */
-  videoFrameRate: number;
+  videoFramerate: number;
   /**
    * Latency mode.
    * - true: Low latency with unassured quality.
@@ -176,7 +176,7 @@ export interface TranscodingConfig {
    * - AUDIO_SAMPLE_RATE_44100 = (Default)44100 Hz
    * - AUDIO_SAMPLE_RATE_48000 = 48000 Hz
    */
-  audioSampleRate: number;
+  audioSampleRateType: number;
   /** 
    * Agora's self-defined audio-channel types. 
    * 
@@ -190,6 +190,14 @@ export interface TranscodingConfig {
    * - 5: Five-channel stereo.
    */
   audioChannels: number;
+  /** Bitrate of the CDN live audio output stream. The default value is 48 Kbps, and the highest value is 128.
+   */
+  audioBitrate: number,
+  /** Reserved property. Extra user-defined information to send SEI for the H.264/H.265 video stream to the CDN live client. Maximum length: 4096 Bytes.
+
+    For more information on SEI frame, see [SEI-related questions](https://docs.agora.io/cn/Agora%20Platform/live_related_faq?platform=%E7%9B%B4%E6%92%AD%E7%9B%B8%E5%85%B3#sei).
+  */
+  transcodingExtraInfo: string,
   /** The watermark image added to the CDN live publishing stream. */
   watermark: {
     /** 
@@ -211,6 +219,28 @@ export interface TranscodingConfig {
     /** Height of the image on the broadcasting video. */
     height: number;
   };
+
+  background: {
+    /** 
+     * HTTP/HTTPS URL address of the image on the broadcasting video.
+     * 
+     * The maximum length of this parameter is 1024 bytes.
+     */
+    url: string;
+    /** Horizontal position of the image from the upper left of the 
+     * broadcasting video. 
+     */
+    x: number;
+    /** Vertical position of the image from the upper left of the broadcasting 
+     * video. 
+     */
+    y: number;
+    /** Width of the image on the broadcasting video. */
+    width: number;
+    /** Height of the image on the broadcasting video. */
+    height: number;
+  };
+  
   /** The TranscodingUsers Array. */
   transcodingUsers: Array<TranscodingUser>;
 }
@@ -465,6 +495,7 @@ export interface RtcStats {
   cpuAppUsage: number;
   /** System CPU usage (%). */
   cpuTotalUsage: number;
+  gatewayRtt: number;
 }
 /** Quality change of the local video. */
 export enum QualityAdaptIndication {
@@ -533,6 +564,15 @@ export interface LocalVideoStats {
    * The codec type of the local video. See {@link VIDEO_CODEC_TYPE}.
    */
   codecType: number;
+  /** The packet loss rate (%) from the local client to Agora's edge server,
+   * before network countermeasures.
+  */
+  txPacketLossRate: number;
+  /** The capture frame rate (fps) of the local video.
+  */
+  captureFrameRate: number;
+
+  videoQualityPoint: number;
 }
 /** 
  * The statistics of the local audio stream.
@@ -781,6 +821,8 @@ export interface VideoEncoderConfiguration {
    * See {@link DegradationPreference}.
    */
   degradationPreference: DegradationPreference;
+
+  mirrorMode: VIDEO_MIRROR_MODE_TYPE;
 }
 /** The video encoding degradation preference under limited bandwidth. */
 export enum DegradationPreference {
@@ -831,6 +873,17 @@ export enum OrientationMode  {
  */
   ORIENTATION_MODE_FIXED_PORTRAIT = 2,
 }
+/** Video mirror modes. */
+export enum VIDEO_MIRROR_MODE_TYPE
+{
+      /** 0: The default mirror mode is determined by the SDK. */
+    VIDEO_MIRROR_MODE_AUTO = 0,//determined by SDK
+        /** 1: Enable mirror mode. */
+    VIDEO_MIRROR_MODE_ENABLED = 1,//enabled mirror
+        /** 2: Disable mirror mode. */
+    VIDEO_MIRROR_MODE_DISABLED = 2,//disable mirror
+}
+
 /**
  * Video statistics of the remote stream.
  */
@@ -879,6 +932,14 @@ export interface RemoteVideoStats {
    * anti-packet-loss method.
    */
   packetLossRate: number;
+  /**
+   * The total active time (ms) of the remote video stream after the remote user joins the channel.
+   */
+  totalActiveTime: number;
+  /**
+   * The total active time (ms) of the remote video stream after the remote user publish the video stream.
+   */
+  publishDuration: number;
 }
 /** Sets the camera capturer configuration. */
 export enum CaptureOutPreference {
@@ -1049,6 +1110,14 @@ export interface RemoteAudioStats {
    * when the audio is available.
    */
   frozenRate: number;
+  /**
+   * The total active time (ms) of the remote audio stream after the remote user joins the channel.
+   */
+  totalActiveTime: number;
+  /**
+   * The total active time (ms) of the remote audio stream after the remote user publish the audio stream.
+   */
+  publishDuration: number;
 }
 
 /**
@@ -1479,6 +1548,73 @@ export type ChannelMediaRelayError =
   | 10 // 10: RELAY_ERROR_SRC_TOKEN_EXPIRED
   | 11; // 11: RELAY_ERROR_DEST_TOKEN_EXPIRED
 
+export interface Metadata {
+    /** The User ID.
+    - For the receiver: the ID of the user who sent the metadata.
+    - For the sender: ignore it.
+    */
+    uid: number;
+    /** Buffer size of the sent or received Metadata.
+      */
+    size: number;
+    /** Buffer address of the sent or received Metadata.
+     */
+    buffer: string;
+    /** Time statmp of the frame following the metadata.
+     */
+    timeStampMs: number;
+  }
+
+/** Audio recording qualities.
+*/
+export enum AUDIO_RECORDING_QUALITY_TYPE
+{
+    /** 0: Low quality. The sample rate is 32 kHz, and the file size is around
+     * 1.2 MB after 10 minutes of recording.
+    */
+    AUDIO_RECORDING_QUALITY_LOW = 0,
+    /** 1: Medium quality. The sample rate is 32 kHz, and the file size is
+     * around 2 MB after 10 minutes of recording.
+    */
+    AUDIO_RECORDING_QUALITY_MEDIUM = 1,
+    /** 2: High quality. The sample rate is 32 kHz, and the file size is
+     * around 3.75 MB after 10 minutes of recording.
+    */
+    AUDIO_RECORDING_QUALITY_HIGH = 2,
+}
+
+/** Audio recording position. */
+export enum AUDIO_RECORDING_POSITION {
+  /** The SDK will record the voices of all users in the channel. */
+  AUDIO_RECORDING_POSITION_MIXED_RECORDING_AND_PLAYBACK = 0,
+  /** The SDK will record the voice of the local user. */
+  AUDIO_RECORDING_POSITION_RECORDING = 1,
+  /** The SDK will record the voices of remote users. */
+  AUDIO_RECORDING_POSITION_MIXED_PLAYBACK = 2,
+}
+
+export interface AudioRecordingConfiguration {
+  /** Pointer to the absolute file path of the recording file. The string of the file name is in UTF-8.
+
+     The SDK determines the storage format of the recording file by the file name suffix:
+
+     - .wav: Large file size with high fidelity.
+     - .aac: Small file size with low fidelity.
+
+     Ensure that the directory to save the recording file exists and is writable.
+     */
+  filePath: string;
+  /** Sets the audio recording quality. See #AUDIO_RECORDING_QUALITY_TYPE.
+
+  @note It is effective only when the recording format is AAC.
+  */
+  recordingQuality: AUDIO_RECORDING_QUALITY_TYPE;
+
+  /** Sets the audio recording position. See #AUDIO_RECORDING_POSITION.
+  */
+  recordingPosition: AUDIO_RECORDING_POSITION;
+}
+
 /**
  * interface for c++ addon (.node)
  * @ignore
@@ -1905,6 +2041,10 @@ export interface NodeRtcEngine {
   /**
    * @ignore
    */
+  startAudioRecording2(config: AudioRecordingConfiguration): number;
+  /**
+   * @ignore
+   */
   stopAudioRecording(): number;
   /**
    * @ignore
@@ -2230,7 +2370,7 @@ export interface NodeRtcEngine {
     pitch: number,
     pan: number,
     gain: number,
-    publish: number,
+    publish: boolean,
     startPos: number
   ): number;
   /**
@@ -2434,6 +2574,26 @@ export interface NodeRtcEngine {
   /**
    * @ignore
    */
+  registerMediaMetadataObserver(): number;
+  /**
+   * @ignore
+   */
+  unRegisterMediaMetadataObserver(): number;
+  /**
+   * @ignore
+   */
+  sendMetadata(metadata: Metadata): number;
+  /**
+   * @ignore
+   */
+  addMetadataEventHandler(callback: Function, callback2: Function): number;
+  /**
+   * @ignore
+   */
+  setMaxMetadataSize(size: number): number;
+  /**
+   * @ignore
+   */
   initializePluginManager(): number;
   /**
    * @ignore
@@ -2463,6 +2623,11 @@ export interface NodeRtcEngine {
    * @ignore
    */
   getPluginParameter(pluginId: string, paramKey: string): string;
+  /**
+   * @ignore
+   */
+  sendCustomReportMessage(id: string, category: string, event: string, label: string, value: number): number;
+
 }
 
 export interface NodeRtcChannel {
@@ -2479,6 +2644,27 @@ export interface NodeRtcChannel {
     uid: number,
     options: ChannelMediaOptions
   ): number;
+
+  /**
+   * @ignore
+   */
+  registerMediaMetadataObserver(): number;
+  /**
+   * @ignore
+   */
+  unRegisterMediaMetadataObserver(): number;
+  /**
+   * @ignore
+   */
+  sendMetadata(metadata: Metadata): number;
+  /**
+   * @ignore
+   */
+  addMetadataEventHandler(callback: Function, callback2: Function): number;
+  /**
+   * @ignore
+   */
+  setMaxMetadataSize(size: number): number;
 
   /**
    * @ignore

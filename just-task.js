@@ -9,7 +9,7 @@ const {getArgvFromNpmEnv, getArgvFromPkgJson} = require('./scripts/npm_argv')
 
 option('electron_version', {default: '5.0.8'});
 option('runtime', {default: 'electron', choices: ['electron', 'node']});
-option('platform', {default: process.platform, choices: ['darwin', 'win32']});
+option('platform', {default: process.platform, choices: ['darwin', 'win32', 'linux']});
 // option('packageVersion');
 option('debug', {default: false, boolean: true});
 option('silent', {default: false, boolean: true});
@@ -72,7 +72,7 @@ task('build:node', () => {
 // npm run download --
 task('download', () => {
   // work-around
-  const addonVersion = '2.9.0-rc.102-build.438'
+  const addonVersion = '2.9.0-rc.107-build.998'
   cleanup(path.join(__dirname, "./build")).then(_ => {
     cleanup(path.join(__dirname, './js')).then(_ => {
       download({
@@ -88,13 +88,14 @@ task('download', () => {
 task('install', () => {
   const config = Object.assign({}, getArgvFromNpmEnv(), getArgvFromPkgJson())
   // work-around
-  const addonVersion = '2.9.0-rc.102-build.438'
+  const addonVersion = '2.9.0-rc.107-build.998'
   if (config.prebuilt) {
     download({
       electronVersion: config.electronVersion, 
       platform: config.platform, 
       packageVersion: addonVersion,
-      arch: config.arch
+      arch: config.arch,
+      no_symbol: config.no_symbol,
     })
   } else {
     return new Promise((resolve, reject) => {

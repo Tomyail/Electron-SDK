@@ -330,6 +330,7 @@ namespace agora {
                     NODE_SET_OBJ_PROP_UINT32(obj, "rxPacketLossRate", stats.rxPacketLossRate);
                     NODE_SET_OBJ_PROP_NUMBER(obj, "cpuAppUsage", stats.cpuAppUsage);
                     NODE_SET_OBJ_PROP_NUMBER(obj, "cpuTotalUsage", stats.cpuTotalUsage);
+                    NODE_SET_OBJ_PROP_NUMBER(obj, "gatewayRtt", stats.gatewayRtt);
                     Local<Value> arg[1] = { obj };
                     auto it = m_callbacks.find(RTC_CHANNEL_EVENT_RTC_STATS);
                     if (it != m_callbacks.end()) {
@@ -542,6 +543,38 @@ namespace agora {
             FUNC_TRACE;
             node_async_call::async_call([this, state, reason] {
                 MAKE_JS_CALL_2(RTC_CHANNEL_EVENT_CONN_STATE_CHANGED, int32, state, int32, reason);
+            });
+        }
+
+        void NodeChannelEventHandler::onAudioPublishStateChange(IChannel *rtcChannel, STREAM_PUBLISH_STATE oldstate, STREAM_PUBLISH_STATE newstate, int elapsed)
+        {
+            FUNC_TRACE;
+            node_async_call::async_call([this, oldstate, newstate, elapsed] {
+                MAKE_JS_CALL_3(RTC_CHANNEL_EVENT_AUDIO_PUBLISH_STATE_CHANGE, int32, oldstate, int32, newstate, int32, elapsed);
+            });
+        }
+
+        void NodeChannelEventHandler::onVideoPublishStateChange(IChannel *rtcChannel, STREAM_PUBLISH_STATE oldstate, STREAM_PUBLISH_STATE newstate, int elapsed)
+        {
+            FUNC_TRACE;
+            node_async_call::async_call([this, oldstate, newstate, elapsed] {
+                MAKE_JS_CALL_3(RTC_CHANNEL_EVENT_VIDEO_PUBLISH_STATE_CHANGE, int32, oldstate, int32, newstate, int32, elapsed);
+            });
+        }
+
+        void NodeChannelEventHandler::onAudioSubscribeStateChange(IChannel *rtcChannel, uid_t uid, STREAM_SUBSCRIBE_STATE oldstate, STREAM_SUBSCRIBE_STATE newstate, int elapsed)
+        {
+            FUNC_TRACE;
+            node_async_call::async_call([this, uid, oldstate, newstate, elapsed] {
+                MAKE_JS_CALL_4(RTC_CHANNEL_EVENT_AUDIO_SUBSCRIBE_STATE_CHANGE, uid, uid, int32, oldstate, int32, newstate, int32, elapsed);
+            });
+        }
+
+        void NodeChannelEventHandler::onVideoSubscribeStateChange(IChannel *rtcChannel, uid_t uid, STREAM_SUBSCRIBE_STATE oldstate, STREAM_SUBSCRIBE_STATE newstate, int elapsed)
+        {
+            FUNC_TRACE;
+            node_async_call::async_call([this, uid, oldstate, newstate, elapsed] {
+                MAKE_JS_CALL_4(RTC_CHANNEL_EVENT_VIDEO_SUBSCRIBE_STATE_CHANGE, uid, uid, int32, oldstate, int32, newstate, int32, elapsed);
             });
         }
     }

@@ -38,7 +38,11 @@ import {
   CaptureParam,
   VideoContentHint,
   VideoEncoderConfiguration,
-  UserInfo
+  UserInfo,
+  Metadata,
+  AUDIO_RECORDING_QUALITY_TYPE,
+  AUDIO_RECORDING_POSITION,
+  AudioRecordingConfiguration
 } from './native_type';
 import { EventEmitter } from 'events';
 import { deprecate, config, Config } from '../Utils';
@@ -709,6 +713,44 @@ class AgoraRtcEngine extends EventEmitter {
       event: ChannelMediaRelayEvent
     ) {
       fire('channelMediaRelayEvent', event);
+    });
+
+    this.rtcEngine.onEvent('audioPublishStateChange', function(
+      channel: string,
+      oldstate: number,
+      newstate: number,
+      elapsed: number
+    ) {
+      fire('audioPublishStateChange', channel, oldstate, newstate, elapsed);
+    });
+
+    this.rtcEngine.onEvent('videoPublishStateChange', function(
+      channel: string,
+      oldstate: number,
+      newstate: number,
+      elapsed: number
+    ) {
+      fire('videoPublishStateChange', channel, oldstate, newstate, elapsed);
+    });
+
+    this.rtcEngine.onEvent('audioSubscribeStateChange', function(
+      channel: string,
+      uid: number,
+      oldstate: number,
+      newstate: number,
+      elapsed: number
+    ) {
+      fire('audioSubscribeStateChange', channel, uid, oldstate, newstate, elapsed);
+    });
+
+    this.rtcEngine.onEvent('videoSubscribeStateChange', function(
+      channel: string,
+      uid: number,
+      oldstate: number,
+      newstate: number,
+      elapsed: number
+    ) {
+      fire('videoSubscribeStateChange', channel, uid, oldstate, newstate, elapsed);
     });
 
     this.rtcEngine.registerDeliverFrame(function(infos: any) {
@@ -1649,7 +1691,8 @@ class AgoraRtcEngine extends EventEmitter {
       bitrate = 0,
       minBitrate = -1,
       orientationMode = 0,
-      degradationPreference = 0
+      degradationPreference = 0,
+      mirrorMode = 0
     } = config;
     return this.rtcEngine.setVideoEncoderConfiguration({
       width,
@@ -1659,7 +1702,8 @@ class AgoraRtcEngine extends EventEmitter {
       bitrate,
       minBitrate,
       orientationMode,
-      degradationPreference
+      degradationPreference,
+      mirrorMode
     });
   }
 
@@ -2077,7 +2121,7 @@ class AgoraRtcEngine extends EventEmitter {
    * - 0: Success.
    * - < 0: Failure.
    */
-  enableAudioVolumeIndication(interval: number, smooth: number, report_vad: boolean): number {
+  enableAudioVolumeIndication(interval: number, smooth: number, report_vad: boolean = false): number {
     return this.rtcEngine.enableAudioVolumeIndication(interval, smooth, report_vad);
   }
 
@@ -2990,6 +3034,22 @@ class AgoraRtcEngine extends EventEmitter {
     return this.rtcEngine.startAudioRecording(filePath, quality)
   }
 
+  /** 
+   * Starts an audio recording.
+   * The SDK allows recording during a call.
+   * This method is usually called after the \ref agora::rtc::IRtcEngine::joinChannel "joinChannel" method.
+   * The recording automatically stops when the \ref agora::rtc::IRtcEngine::leaveChannel "leaveChannel" method is called.
+
+   * @param config Sets the audio recording configuration. See #AudioRecordingConfiguration.
+
+   * @return
+   * - 0: Success.
+   * - < 0: Failure.
+   */
+  startAudioRecording2(config: AudioRecordingConfiguration): number {
+    return this.rtcEngine.startAudioRecording2(config);
+  }
+
   stopAudioRecording():number {
     return this.rtcEngine.stopAudioRecording()
   }
@@ -3233,7 +3293,7 @@ class AgoraRtcEngine extends EventEmitter {
    * @return {Array} The array list of the window ID and relevant information.
    */
   getScreenWindowsInfo(options: number): Array<Object> {
-    let defaultValue = (1 << 0) | (1 << 4)
+    let defaultValue = (0) | (1 << 4)
     let value = (options === null || options === undefined) ? defaultValue : options;
     return this.rtcEngine.getScreenWindowsInfo(value);
   }
@@ -4181,7 +4241,7 @@ class AgoraRtcEngine extends EventEmitter {
     pitch: number,
     pan: number,
     gain: number,
-    publish: number,
+    publish: boolean,
     startPos: number
   ): number {
     return this.rtcEngine.playEffect(
@@ -4668,6 +4728,41 @@ class AgoraRtcEngine extends EventEmitter {
    */
   getPluginParameter(pluginId: string, paramKey: string): string {
     return this.rtcEngine.getPluginParameter(pluginId, paramKey);
+  }
+ 
+  unRegisterMediaMetadataObserver(): number {
+    return this.rtcEngine.unRegisterMediaMetadataObserver();
+  }
+
+  registerMediaMetadataObserver(): number {
+    const fire = (event: string, ...args: Array<any>) => {
+      setImmediate(() => {
+        this.emit(event, ...args);
+      });
+    };
+
+    this.rtcEngine.addMetadataEventHandler((metadata: Metadata) => {
+      fire('receiveMetadata', metadata);
+    }, (metadata: Metadata) => {
+      fire('sendMetadataSuccess', metadata);
+    });
+    return this.rtcEngine.registerMediaMetadataObserver();
+  }
+
+  sendMetadata(metadata: Metadata): number {
+    return this.rtcEngine.sendMetadata(metadata);
+  }
+
+  setMaxMetadataSize(size: number): number {
+    return this.rtcEngine.setMaxMetadataSize(size);
+  }
+  /** Agora supports reporting and analyzing customized messages.
+   *
+   * This function is in the beta stage with a free trial. The ability provided in its beta test version is reporting a maximum of 10 message pieces within 6 seconds, with each message piece not exceeding 256 bytes and each string not exceeding 100 bytes.
+   * To try out this function, contact [support@agora.io](mailto:support@agora.io) and discuss the format of customized messages with us.
+   */
+  sendCustomReportMessage(id: string, category: string, event: string, label: string, value: number): number {
+    return this.rtcEngine.sendCustomReportMessage(id, category, event, label, value);
   }
 }
 /** The AgoraRtcEngine interface. */
@@ -5537,6 +5632,45 @@ declare interface AgoraRtcEngine {
   on(evt: 'channelMediaRelayEvent', cb: (
     event: ChannelMediaRelayEvent
   ) => void): this;
+
+  on(evt: 'audioPublishStateChange', cb: (
+    channel: string,
+    oldstate: number,
+    newstate: number,
+    elapsed: number
+  ) => void): this;
+
+  on(evt: 'videoPublishStateChange', cb: (
+    channel: string,
+    oldstate: number,
+    newstate: number,
+    elapsed: number
+  ) => void): this;
+
+  on(evt: 'audioSubscribeStateChange', cb: (
+    channel: string,
+    uid: number,
+    oldstate: number,
+    newstate: number,
+    elapsed: number
+  ) => void): this;
+
+  on(evt: 'videoSubscribeStateChange', cb: (
+    channel: string,
+    uid: number,
+    oldstate: number,
+    newstate: number,
+    elapsed: number
+  ) => void): this;
+
+  on(evt: 'receiveMetadata', cb: (
+    metadata: Metadata
+    ) => void): this;
+
+  on(evt: 'sendMetadataSuccess', cb: (
+    metadata: Metadata
+    ) => void): this;
+
   on(evt: string, listener: Function): this;
 }
 
@@ -5810,7 +5944,40 @@ class AgoraRtcChannel extends EventEmitter
     ) => {
         fire('connectionStateChanged', state, reason);
     });
-    
+
+    this.rtcChannel.onEvent('audioPublishStateChange', (
+      oldstate: number,
+      newstate: number,
+      elapsed: number
+    ) => {
+        fire('audioPublishStateChange', oldstate, newstate, elapsed);
+    });
+
+    this.rtcChannel.onEvent('videoPublishStateChange', (
+      oldstate: number,
+      newstate: number,
+      elapsed: number
+    ) => {
+        fire('videoPublishStateChange', oldstate, newstate, elapsed);
+    });
+
+    this.rtcChannel.onEvent('audioSubscribeStateChange', (
+      uid: number,
+      oldstate: number,
+      newstate: number,
+      elapsed: number
+    ) => {
+        fire('audioSubscribeStateChange', uid, oldstate, newstate, elapsed);
+    });
+
+    this.rtcChannel.onEvent('videoSubscribeStateChange', (
+      uid: number,
+      oldstate: number,
+      newstate: number,
+      elapsed: number
+    ) => {
+        fire('videoSubscribeStateChange', uid, oldstate, newstate, elapsed);
+    });
   }
 
   joinChannel(
@@ -5958,6 +6125,33 @@ class AgoraRtcChannel extends EventEmitter
 
   release(): number {
     return this.rtcChannel.release()
+  }
+
+  unRegisterMediaMetadataObserver(): number {
+    return this.rtcChannel.unRegisterMediaMetadataObserver();
+  }
+
+  registerMediaMetadataObserver(): number {
+    const fire = (event: string, ...args: Array<any>) => {
+      setImmediate(() => {
+        this.emit(event, ...args);
+      });
+    };
+
+    this.rtcChannel.addMetadataEventHandler((metadata: Metadata) => {
+      fire('receiveMetadata', metadata);
+    }, (metadata: Metadata) => {
+      fire('sendMetadataSuccess', metadata);
+    });
+    return this.rtcChannel.registerMediaMetadataObserver();
+  }
+
+  sendMetadata(metadata: Metadata): number {
+    return this.rtcChannel.sendMetadata(metadata);
+  }
+
+  setMaxMetadataSize(size: number): number {
+    return this.rtcChannel.setMaxMetadataSize(size);
   }
 }
 

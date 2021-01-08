@@ -1,5 +1,25 @@
-## 2.9.0-rc.102-build.4385
-* fix params
+## 2.9.0-rc.107-build.998
+* Add new API:
+  - sendCustomReportMessage
+
+## 2.9.0-rc.107-build.971
+* Add new API:
+  - startAudioRecording2
+
+## 2.9.0-rc.106-build.804
+* fix bug of playEffect()
+
+## 2.9.0-rc.104-build.553
+* add gatewayRtt into rtcStats
+
+## 2.9.0-rc.104-build.509
+* Fix token issue for videoSource join
+
+## 2.9.0-rc.104
+* modify enableAudioVolumeIndication and onAudioVolumeIndication
+* Add new APIs:
+  - setAddonLogFile
+  - videoSourceSetAddonLogFile
 
 ## 2.9.0-rc.102-build.438
 * add startPos for playEffect
