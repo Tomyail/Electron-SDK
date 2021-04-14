@@ -98,9 +98,9 @@ task('install', () => {
       no_symbol: config.no_symbol,
     })
   } else {
-    build(Object.assign({}, config, {
-      packageVersion: addonVersion
-    }))
+    // build(Object.assign({}, config, {
+    //   packageVersion: addonVersion
+    // }))
   }
 })
 
