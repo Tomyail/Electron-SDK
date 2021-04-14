@@ -1985,7 +1985,7 @@ export interface NodeRtcEngine {
   /**
    * @ignore
    */
-  getPlaybackDeviceInfo(deviceId: string, deviceName: string): Array<Object>;
+  getPlaybackDeviceInfo(deviceId: string, deviceName: string): number;
   /**
    * @ignore
    */
