@@ -98,31 +98,9 @@ task('install', () => {
       no_symbol: config.no_symbol,
     })
   } else {
-    return new Promise((resolve, reject) => {
-      switcharch({
-        arch: argv().arch,
-        // platform: 'win32',
-      }).then(() => {
-        return synclib({
-          platform: argv().platform,
-          // platform: 'win32',
-          arch: argv().arch,
-          libUrl: {
-            win: argv().liburl_win || config.lib_sdk_win,
-            mac: argv().liburl_mac || config.lib_sdk_mac,
-            win64: argv().liburl_win64 || config.lib_sdk_win64
-          }
-        })
-      }).then(() => {
-        return build(Object.assign({}, config, {
-          packageVersion: addonVersion
-        }))
-      }).then(() => {
-        resolve()
-      }).catch(e => {
-        reject(e)
-      })
-    })
+    // build(Object.assign({}, config, {
+    //   packageVersion: addonVersion
+    // }))
   }
 })
 
