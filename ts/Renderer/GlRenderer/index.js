@@ -1,7 +1,6 @@
-const createProgramFromSources = require("./webgl-utils")
-  .createProgramFromSources;
-const EventEmitter = require("events").EventEmitter;
-const { config } = require("../../Utils/index");
+const createProgramFromSources = require('./webgl-utils').createProgramFromSources;
+const EventEmitter = require('events').EventEmitter;
+const {config} = require('../../Utils/index')
 
 const AgoraRender = function() {
   let gl;
@@ -37,7 +36,7 @@ const AgoraRender = function() {
 
   that.setContentMode = function(mode) {
     that.contentMode = mode;
-  };
+  }
 
   that.bind = function(view) {
     initCanvas(
@@ -52,9 +51,9 @@ const AgoraRender = function() {
 
   that.unbind = function() {
     try {
-      gl.getExtension("WEBGL_lose_context").loseContext();
+      gl.getExtension('WEBGL_lose_context').loseContext();
     } catch (err) {
-      console.warn(err);
+      console.warn(err)
     }
     program = undefined;
     positionLocation = undefined;
@@ -78,8 +77,10 @@ const AgoraRender = function() {
       that.container && that.container.removeChild(that.canvas);
       that.view && that.view.removeChild(that.container);
     } catch (e) {
-      console.warn(e);
+      console.warn(e)
     }
+
+
 
     that.canvas = undefined;
     that.container = undefined;
@@ -87,20 +88,16 @@ const AgoraRender = function() {
     that.mirrorView = false;
   };
 
-  that.refreshCanvas = function() {
+  that.refreshCanvas  = function() {
     if (that.lastImageWidth) {
-      updateViewZoomLevel(
-        that.lastImageRotation,
-        that.lastImageWidth,
-        that.lastImageHeight
-      );
+      updateViewZoomLevel(that.lastImageRotation, that.lastImageWidth, that.lastImageHeight);
     }
-  };
+  }
 
   that.renderImage = function(image) {
     // Rotation, width, height, left, top, right, bottom, yplane, uplane, vplane
     if (!gl) {
-      console.log("!gl");
+      console.log('!gl');
       return;
     }
 
@@ -113,18 +110,13 @@ const AgoraRender = function() {
       const view = that.view;
       that.unbind();
       // Console.log('init canvas ' + image.width + "*" + image.height + " rotation " + image.rotation);
-      initCanvas(
-        view,
-        image.mirror,
-        image.width,
-        image.height,
-        image.rotation,
-        e => {
-          console.error(
-            `init canvas ${image.width}*${image.height} rotation ${image.rotation} failed. ${e}`
-          );
-        }
-      );
+      initCanvas(view, image.mirror, image.width, image.height, image.rotation, e => {
+        console.error(
+          `init canvas ${image.width}*${image.height} rotation ${
+            image.rotation
+          } failed. ${e}`
+        );
+      });
     }
 
     // Console.log(image.width, "*", image.height, "planes "
@@ -164,11 +156,11 @@ const AgoraRender = function() {
 
     if (!that.firstFrameRender) {
       that.firstFrameRender = true;
-      that.event.emit("ready");
+      that.event.emit('ready');
     }
   };
 
-  /**
+      /**
    * draw image with params
    * @private
    * @param {*} render
@@ -177,7 +169,7 @@ const AgoraRender = function() {
    * @param {*} uplanedata
    * @param {*} vplanedata
    */
-  that.drawFrame = function({ header, yUint8Array, uUint8Array, vUint8Array }) {
+  that.drawFrame = function({header, yUint8Array, uUint8Array, vUint8Array}) {
     var headerLength = 20;
     var dv = new DataView(header);
     var format = dv.getUint8(0);
@@ -234,10 +226,10 @@ const AgoraRender = function() {
     });
     var now32 = (Date.now() & 0xffffffff) >>> 0;
     var latency = now32 - ts;
-  };
+  }
 
   function uploadYuv(width, height, yplane, uplane, vplane) {
-    var e;
+    var e
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, yTexture);
@@ -254,17 +246,10 @@ const AgoraRender = function() {
       yplane
     );
 
-    if (config.getGlDebug()) {
+    if(config.getGlDebug()){
       e = gl.getError();
       if (e != gl.NO_ERROR) {
-        console.log(
-          "upload y plane ",
-          width,
-          height,
-          yplane.byteLength,
-          " error",
-          e
-        );
+        console.log('upload y plane ', width, height, yplane.byteLength, ' error', e);
       }
     }
     gl.activeTexture(gl.TEXTURE1);
@@ -280,23 +265,16 @@ const AgoraRender = function() {
       gl.UNSIGNED_BYTE,
       uplane
     );
-    if (config.getGlDebug()) {
+    if(config.getGlDebug()){
       e = gl.getError();
       if (e != gl.NO_ERROR) {
-        console.log(
-          "upload y plane ",
-          width,
-          height,
-          yplane.byteLength,
-          " error",
-          e
-        );
+        console.log('upload y plane ', width, height, yplane.byteLength, ' error', e);
       }
     }
 
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_2D, vTexture);
-    ("");
+    ('');
     gl.texImage2D(
       gl.TEXTURE_2D,
       0,
@@ -308,17 +286,10 @@ const AgoraRender = function() {
       gl.UNSIGNED_BYTE,
       vplane
     );
-    if (config.getGlDebug()) {
+    if(config.getGlDebug()){
       e = gl.getError();
       if (e != gl.NO_ERROR) {
-        console.log(
-          "upload y plane ",
-          width,
-          height,
-          yplane.byteLength,
-          " error",
-          e
-        );
+        console.log('upload y plane ', width, height, yplane.byteLength, ' error', e);
       }
     }
   }
@@ -336,38 +307,38 @@ const AgoraRender = function() {
   }
 
   const vertexShaderSource =
-    "attribute vec2 a_position;" +
-    "attribute vec2 a_texCoord;" +
-    "uniform vec2 u_resolution;" +
-    "varying vec2 v_texCoord;" +
-    "void main() {" +
-    "vec2 zeroToOne = a_position / u_resolution;" +
-    "   vec2 zeroToTwo = zeroToOne * 2.0;" +
-    "   vec2 clipSpace = zeroToTwo - 1.0;" +
-    "   gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);" +
-    "v_texCoord = a_texCoord;" +
-    "}";
+    'attribute vec2 a_position;' +
+    'attribute vec2 a_texCoord;' +
+    'uniform vec2 u_resolution;' +
+    'varying vec2 v_texCoord;' +
+    'void main() {' +
+    'vec2 zeroToOne = a_position / u_resolution;' +
+    '   vec2 zeroToTwo = zeroToOne * 2.0;' +
+    '   vec2 clipSpace = zeroToTwo - 1.0;' +
+    '   gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);' +
+    'v_texCoord = a_texCoord;' +
+    '}';
   const yuvShaderSource =
-    "precision mediump float;" +
-    "uniform sampler2D Ytex;" +
-    "uniform sampler2D Utex,Vtex;" +
-    "varying vec2 v_texCoord;" +
-    "void main(void) {" +
-    "  float nx,ny,r,g,b,y,u,v;" +
-    "  mediump vec4 txl,ux,vx;" +
-    "  nx=v_texCoord[0];" +
-    "  ny=v_texCoord[1];" +
-    "  y=texture2D(Ytex,vec2(nx,ny)).r;" +
-    "  u=texture2D(Utex,vec2(nx,ny)).r;" +
-    "  v=texture2D(Vtex,vec2(nx,ny)).r;" +
-    "  y=1.1643*(y-0.0625);" +
-    "  u=u-0.5;" +
-    "  v=v-0.5;" +
-    "  r=y+1.5958*v;" +
-    "  g=y-0.39173*u-0.81290*v;" +
-    "  b=y+2.017*u;" +
-    "  gl_FragColor=vec4(r,g,b,1.0);" +
-    "}";
+    'precision mediump float;' +
+    'uniform sampler2D Ytex;' +
+    'uniform sampler2D Utex,Vtex;' +
+    'varying vec2 v_texCoord;' +
+    'void main(void) {' +
+    '  float nx,ny,r,g,b,y,u,v;' +
+    '  mediump vec4 txl,ux,vx;' +
+    '  nx=v_texCoord[0];' +
+    '  ny=v_texCoord[1];' +
+    '  y=texture2D(Ytex,vec2(nx,ny)).r;' +
+    '  u=texture2D(Utex,vec2(nx,ny)).r;' +
+    '  v=texture2D(Vtex,vec2(nx,ny)).r;' +
+    '  y=1.1643*(y-0.0625);' +
+    '  u=u-0.5;' +
+    '  v=v-0.5;' +
+    '  r=y+1.5958*v;' +
+    '  g=y-0.39173*u-0.81290*v;' +
+    '  b=y+2.017*u;' +
+    '  gl_FragColor=vec4(r,g,b,1.0);' +
+    '}';
 
   function initCanvas(view, mirror, width, height, rotation, onFailure) {
     that.clientWidth = view.clientWidth;
@@ -377,15 +348,15 @@ const AgoraRender = function() {
     that.mirrorView = mirror;
     // that.canvasUpdated = false;
 
-    that.container = document.createElement("div");
-    that.container.style.width = "100%";
-    that.container.style.height = "100%";
-    that.container.style.display = "flex";
-    that.container.style.justifyContent = "center";
-    that.container.style.alignItems = "center";
+    that.container = document.createElement('div');
+    that.container.style.width = '100%';
+    that.container.style.height = '100%';
+    that.container.style.display = 'flex';
+    that.container.style.justifyContent = 'center';
+    that.container.style.alignItems = 'center';
     that.view.appendChild(that.container);
 
-    that.canvas = document.createElement("canvas");
+    that.canvas = document.createElement('canvas');
     if (rotation == 0 || rotation == 180) {
       that.canvas.width = width;
       that.canvas.height = height;
@@ -397,21 +368,21 @@ const AgoraRender = function() {
     that.initHeight = height;
     that.initRotation = rotation;
     if (that.mirrorView) {
-      that.canvas.style.transform = "rotateY(180deg)";
+      that.canvas.style.transform = 'rotateY(180deg)';
     }
     that.container.appendChild(that.canvas);
     try {
       // Try to grab the standard context. If it fails, fallback to experimental.
       gl =
-        that.canvas.getContext("webgl", { preserveDrawingBuffer: true }) ||
-        that.canvas.getContext("experimental-webgl");
+        that.canvas.getContext('webgl', { preserveDrawingBuffer: true }) ||
+        that.canvas.getContext('experimental-webgl');
     } catch (e) {
       console.log(e);
     }
 
     if (!gl) {
       gl = undefined;
-      onFailure({ error: "Browser not support! No WebGL detected." });
+      onFailure({ error: 'Browser not support! No WebGL detected.' });
       return;
     }
 
@@ -425,18 +396,15 @@ const AgoraRender = function() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // Setup GLSL program
-    program = createProgramFromSources(gl, [
-      vertexShaderSource,
-      yuvShaderSource
-    ]);
+    program = createProgramFromSources(gl, [vertexShaderSource, yuvShaderSource]);
     gl.useProgram(program);
 
     initTextures();
   }
 
   function initTextures() {
-    positionLocation = gl.getAttribLocation(program, "a_position");
-    texCoordLocation = gl.getAttribLocation(program, "a_texCoord");
+    positionLocation = gl.getAttribLocation(program, 'a_position');
+    texCoordLocation = gl.getAttribLocation(program, 'a_texCoord');
 
     surfaceBuffer = gl.createBuffer();
     texCoordBuffer = gl.createBuffer();
@@ -469,13 +437,13 @@ const AgoraRender = function() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-    const y = gl.getUniformLocation(program, "Ytex");
+    const y = gl.getUniformLocation(program, 'Ytex');
     gl.uniform1i(y, 0); /* Bind Ytex to texture unit 0 */
 
-    const u = gl.getUniformLocation(program, "Utex");
+    const u = gl.getUniformLocation(program, 'Utex');
     gl.uniform1i(u, 1); /* Bind Utex to texture unit 1 */
 
-    const v = gl.getUniformLocation(program, "Vtex");
+    const v = gl.getUniformLocation(program, 'Vtex');
     gl.uniform1i(v, 2); /* Bind Vtex to texture unit 2 */
   }
 
@@ -521,8 +489,8 @@ const AgoraRender = function() {
       console.error(e);
       return false;
     }
-
-    return true;
+    
+    return true
   }
 
   function updateCanvas(rotation, width, height) {
@@ -530,16 +498,16 @@ const AgoraRender = function() {
     //   return;
     // }
     if (width || height) {
-      that.lastImageWidth = width;
-      that.lastImageHeight = height;
-      that.lastImageRotation = rotation;
-    } else {
-      width = that.lastImageWidth;
-      height = that.lastImageHeight;
-      rotation = that.lastImageRotation;
-    }
+	    that.lastImageWidth = width;
+	    that.lastImageHeight = height;
+	    that.lastImageRotation = rotation;
+	  } else {
+	    width  = that.lastImageWidth;
+	    height = that.lastImageHeight;
+	    rotation = that.lastImageRotation;
+	  }
     if (!updateViewZoomLevel(rotation, width, height)) {
-      return;
+	    return;
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, surfaceBuffer);
     gl.enableVertexAttribArray(positionLocation);
@@ -602,7 +570,7 @@ const AgoraRender = function() {
       gl.STATIC_DRAW
     );
 
-    const resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+    const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
     gl.uniform2f(resolutionLocation, width, height);
     // that.canvasUpdated = true;
   }
